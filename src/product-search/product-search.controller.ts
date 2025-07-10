@@ -14,6 +14,12 @@ export class ProductSearchController {
     return await this.productSearchService.created(dto);
   }
 
+  @Get('sync')
+  @ApiProperty({ description: 'Sincronização do Mongo com o Elasticsearch' })
+  async sync() {
+    return this.productSearchService.sync();
+  }
+
   @Get('search')
   @ApiQuery({ name: 'q', required: true, description: 'Texto para busca (sem IA)' })
   async search(@Query('q') query: string) {
