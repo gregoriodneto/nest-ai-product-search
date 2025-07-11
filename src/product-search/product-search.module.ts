@@ -1,33 +1,34 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { ProductSearchService } from './product-search.service';
-import { ProductSearchController } from './product-search.controller';
-import { ElasticsearchModule } from '@nestjs/elasticsearch';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MongooseProductsRepository } from './infrastructure/repositories/mongoose-products.repository';
-import { Product, ProductSchema } from './infrastructure/entities/products.entity';
+
+import { ProductSearchController } from './interface/http/controllers/product-search.controller';
+import { CreateProductSearchUseCase } from './application/use-cases/create-product-search.use-case';
+import { UpdateProductSearchUseCase } from './application/use-cases/update-product-search.use-case';
+import { FindOneProductSearchUseCase } from './application/use-cases/find-one-product-search.use-case';
+
+import { ProductSearchService } from './application/services/product-search.service';
+import { ProductSearch, ProductSearchSchema } from './infrastructure/framework/mongo/entities/product-search.entity';
+import { PRODUCT_SEARCH_REPOSITORY } from './domain/repositories/product-search.repository.port';
+import { MongooseProductSearchRepository } from './infrastructure/framework/mongo/mongoose-product-search.repository';
+import { ElasticsearchModule } from '@nestjs/elasticsearch';
+import { FindManyProductSearchsUseCase } from './application/use-cases/find-many-product-search.use-case';
+import { SyncProductSearchsUseCase } from './application/use-cases/sync-product-search.use-case';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    HttpModule,
-    ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        uri: config.get<string>('MONGODB_URI'),
-      })
-    }),
-    MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
+    MongooseModule.forFeature([
+      { name: ProductSearch.name, schema: ProductSearchSchema },
+    ]),
     ElasticsearchModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (cfg: ConfigService) => {
-        const typeModule = cfg.get<string>('ELATIC_TYPE_MODULE');
-
+        const typeModule = cfg.get<string>('ELASTIC_TYPE_MODULE');        
+        
         if (typeModule === 'cloud') {
           const node = cfg.get<string>('ELASTIC_NODE');
           const apiKey = cfg.get<string>('ELASTIC_API_KEY');
-
+          
           const clientOptions: any = {
             node,
           };
@@ -47,6 +48,14 @@ import { Product, ProductSchema } from './infrastructure/entities/products.entit
     }),
   ],
   controllers: [ProductSearchController],
-  providers: [ProductSearchService, MongooseProductsRepository]
+  providers: [
+    ProductSearchService,
+    CreateProductSearchUseCase,
+    UpdateProductSearchUseCase,
+    FindManyProductSearchsUseCase,
+    FindOneProductSearchUseCase,
+    SyncProductSearchsUseCase,
+    { provide: PRODUCT_SEARCH_REPOSITORY, useClass: MongooseProductSearchRepository },
+  ],
 })
 export class ProductSearchModule {}
