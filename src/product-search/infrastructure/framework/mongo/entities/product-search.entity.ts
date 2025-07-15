@@ -3,7 +3,7 @@ import mongoose, { Document } from 'mongoose';
 
 export type ProductSearchDocument = ProductSearch & Document;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: 'products' })
 export class ProductSearch {
   _id: mongoose.Schema.Types.ObjectId;
 
@@ -21,7 +21,6 @@ export class ProductSearch {
 
   @Prop()
   price: number;
-    
 }
 
 export const ProductSearchSchema = SchemaFactory.createForClass(ProductSearch);

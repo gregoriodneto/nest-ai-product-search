@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
@@ -11,14 +12,17 @@ import { UpdateProductSearchDto } from 'src/product-search/interface/http/dto/up
 import { IProductSearchRepositoryPort } from 'src/product-search/domain/repositories/product-search.repository.port';
 
 @Injectable()
-export class MongooseProductSearchRepository implements IProductSearchRepositoryPort {
+export class MongooseProductSearchRepository
+  implements IProductSearchRepositoryPort
+{
   constructor(
     @InjectModel(ProductSearchMongoose.name)
-    private readonly model: Model<ProductSearchMongoose>
+    private readonly model: Model<ProductSearchMongoose>,
   ) {}
 
-  async findMany(): Promise<ProductSearch[]> {
-    const docs = await this.model.find();
+  async findMany(lastId?: string, limit = 1000): Promise<ProductSearch[]> {
+    const query = lastId ? { _id: { $gt: lastId } } : {};
+    const docs = await this.model.find(query).sort({ _id: 1 }).limit(limit);
     return docs.map(MongooseProductSearchMapper.toDomain);
   }
 
@@ -32,8 +36,13 @@ export class MongooseProductSearchRepository implements IProductSearchRepository
     return doc ? MongooseProductSearchMapper.toDomain(doc) : null;
   }
 
-  async update(id: string, data: UpdateProductSearchDto): Promise<ProductSearch | null> {
-    const updated = await this.model.findByIdAndUpdate(id, data, { new: true }).exec();
+  async update(
+    id: string,
+    data: UpdateProductSearchDto,
+  ): Promise<ProductSearch | null> {
+    const updated = await this.model
+      .findByIdAndUpdate(id, data, { new: true })
+      .exec();
     return updated ? MongooseProductSearchMapper.toDomain(updated) : null;
   }
 }

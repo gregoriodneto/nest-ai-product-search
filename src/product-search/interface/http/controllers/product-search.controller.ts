@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import {
+  Body,
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBody,
   ApiCreatedResponse,
@@ -40,6 +51,43 @@ export class ProductSearchController {
     return this.productSearchService.findAll();
   }
 
+  @Get('sync')
+  @ApiOperation({ summary: 'Sincronização do Mongo com o Elasticsearch' })
+  async sync() {
+    return this.productSearchService.sync();
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: 'Buscando produtos no Elasticsearch' })
+  @ApiQuery({
+    name: 'q',
+    required: true,
+    description: 'Texto para busca (sem IA)',
+  })
+  async search(@Query('q') query: string) {
+    return this.productSearchService.searchProducts(query);
+  }
+
+  @Get('search-ai')
+  @ApiOperation({
+    summary: 'Buscando produtos no Elasticsearch com ajuda da IA',
+  })
+  @ApiQuery({
+    name: 'q',
+    required: true,
+    description: 'Texto para busca usando IA',
+  })
+  async searchAi(@Query('q') query: string) {
+    try {
+      return this.productSearchService.searchProductsWithAi(query);
+    } catch (error: any) {
+      throw new HttpException(
+        'O serviço de IA está temporariamente indisponível. Por favor, tente novamente mais tarde.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   /* ────────────────────────────────────────────────
      GET /product-search/:id
   ──────────────────────────────────────────────── */
@@ -61,32 +109,5 @@ export class ProductSearchController {
   @ApiOkResponse({ description: 'ProductSearch atualizado.' })
   update(@Param('id') id: string, @Body() dto: UpdateProductSearchDto) {
     return this.productSearchService.update(id, dto);
-  }
-
-  @Get('sync')
-  @ApiOperation({ summary: 'Sincronização do Mongo com o Elasticsearch' })
-  async sync() {
-    return this.productSearchService.sync();
-  }
-
-  @Get('search')
-  @ApiOperation({ summary: 'Buscando produtos no Elasticsearch' })
-  @ApiQuery({ name: 'q', required: true, description: 'Texto para busca (sem IA)' })
-  async search(@Query('q') query: string) {
-    return this.productSearchService.searchProducts(query);
-  }
-
-  @Get('search-ai')
-  @ApiOperation({ summary: 'Buscando produtos no Elasticsearch com ajuda da IA' })
-  @ApiQuery({ name: 'q', required: true, description: 'Texto para busca usando IA' })
-  async searchAi(@Query('q') query: string) {
-    try {
-      return this.productSearchService.searchProductsWithAi(query);
-    } catch (error) {
-      throw new HttpException(
-        'O serviço de IA está temporariamente indisponível. Por favor, tente novamente mais tarde.', 
-        HttpStatus.INTERNAL_SERVER_ERROR
-      )
-    }
   }
 }

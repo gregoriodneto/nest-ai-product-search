@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProductSearchModule } from './product-search/product-search.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ElasticsearchModule } from '@nestjs/elasticsearch';
 import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
